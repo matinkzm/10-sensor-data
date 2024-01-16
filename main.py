@@ -13,16 +13,24 @@ df.rename(columns={"Measurement Timestamp": "Measurement_Timestamp"}, inplace=Tr
 # split the time stamp to sort the data using date only
 df[['date', 'time', "AM/PM"]] = df.Measurement_Timestamp.str.split(expand=True)
 
-# drop redundant columns
-df.drop(['time', 'AM/PM'], axis=1, inplace=True)
-
 # convert date into corrct format
 df['date'] = pd.to_datetime(df['date'], format='%m/%d/%Y')
 
-# dort by date column
-df.sort_values(by="date", inplace=True)
+# sort by date column
+df.sort_values(by=["date", "time"], inplace=True)
+
+# drop redundant columns
+df.drop(['time', 'AM/PM'], axis=1, inplace=True)
 
 # reindex the dataframe
 df = df.reset_index(drop=True)
 
-print(df.head(1000).to_string())
+# load it into a local database
+connection = sqlite3.connect("local_database.db")
+cursor = connection.cursor()
+df.to_sql("water_quality", connection, if_exists='replace', index=True)
+
+result = cursor.execute("SELECT * FROM water_quality LIMIT 100").fetchall()
+for result in result:
+    print(result)
+
